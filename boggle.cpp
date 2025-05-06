@@ -96,4 +96,42 @@ bool boggleHelper(const std::set<std::string>& dict, const std::set<std::string>
 {
 //add your solution here!
 
+	if (r >= board.size() || c >= board[r].size()) {
+		return false;
+	}
+
+	// if (dr == 0 && dc == 0) {
+	// 	return false;
+	// }
+
+	word += board[r][c];
+
+	bool valid_word = false;
+	if (dict.find(word) != dict.end()) {
+		valid_word = true;
+	}
+
+	// check if word is a valid prefix
+	bool valid_prefix = true;
+	if (prefix.find(word) == prefix.end()) {
+		valid_prefix = false;
+	}
+
+	if (valid_word && valid_prefix == false) {
+		result.insert(word);
+		return true;
+	}
+
+	// just return true if word
+	if (valid_prefix == false) {
+		return valid_word;
+	}
+
+	bool is_longer = boggleHelper(dict, prefix, board, word, result, r + dr, c + dc, dr, dc);
+
+	if (valid_word && is_longer == false) {
+		result.insert(word);
+	}
+
+	return  valid_word || is_longer;
 }
