@@ -35,7 +35,7 @@ struct LinearProber : public Prober<KeyType> {
     {
         // Complete the condition below that indicates failure
         // to find the key or an empty slot
-        if( this->numProbes_ > this->m_) {
+        if( this->numProbes_ >= this->m_) {
             return this->npos; 
         }
         HASH_INDEX_T loc = (this->start_ + this->numProbes_) % this->m_;
@@ -96,14 +96,17 @@ public:
         Prober<KeyType>::init(start, m, key);
         HASH_INDEX_T modulus = findModulusToUseFromTableSize(m);
         // Compute probe stepsize given modulus and h2(k) 
-        dhstep_ = modulus - h2_(key) % modulus;
+        dhstep_ = modulus - (h2_(key) % modulus);
+				if (dhstep_ == 0) {
+					dhstep_ = 1;
+				}
     }
 
     // To be completed
     HASH_INDEX_T next() 
     {
 			// failiure condition (same as other probing method)
-			if (this->numProbes_ > this->m_) {
+			if (this->numProbes_ >= this->m_) {
 				return this->npos;
 			}
 
@@ -311,7 +314,7 @@ HashTable<K,V,Prober,Hash,KEqual>::HashTable(
 template<typename K, typename V, typename Prober, typename Hash, typename KEqual>
 HashTable<K,V,Prober,Hash,KEqual>::~HashTable()
 {
-	for (int i = 0; i < table_.size(); i++) {
+	for (size_t i = 0; i < table_.size(); i++) {
 		delete table_[i];
 	}
 }
@@ -335,7 +338,7 @@ template<typename K, typename V, typename Prober, typename Hash, typename KEqual
 void HashTable<K,V,Prober,Hash,KEqual>::insert(const ItemType& p)
 {
 	// check load+factor first (may need to resize) 
-	if ((numItems_ + numTombstones_ / table_.size()) > resizeAlpha_) {
+	if (static_cast<double>(numItems_ + numTombstones_) / static_cast<double>(table_.size()) >= resizeAlpha_) {
 		resize();
 	}
 
@@ -454,18 +457,19 @@ void HashTable<K,V,Prober,Hash,KEqual>::resize()
 	for (size_t i = 0; i < table_.size(); i++) {
 		if (table_[i] != nullptr && table_[i]->deleted == false) {
 			prev.push_back(table_[i]);
-			delete table_[i];
 		}
 	}
 
-	table_.clear();
+	// table_.clear();
 
-	mIndex_ += 1;
+	mIndex_++;
+
+	table_.assign(CAPACITIES[mIndex_], nullptr);
 
 	// fill the new table with nullptr vals
-	for (size_t i = 0; i < CAPACITIES[mIndex_]; i++) {
-		table_[i] = nullptr;
-	}
+	// for (size_t i = 0; i < CAPACITIES[mIndex_]; i++) {
+	// 	table_[i] = nullptr;
+	// }
 
 	numItems_ = 0;
 	numTombstones_ = 0;
