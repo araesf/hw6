@@ -345,7 +345,7 @@ void HashTable<K,V,Prober,Hash,KEqual>::insert(const ItemType& p)
 		// probe the key
     HASH_INDEX_T loc = this->probe(p.first);
     if(npos == loc){
-			return;
+			throw std::logic_error("No free slot to insert into");
 		}
 
 		// if empty
@@ -455,7 +455,11 @@ void HashTable<K,V,Prober,Hash,KEqual>::resize()
 	// fill a vector holding the previous state of table before resize and clear ptrs
 	std::vector<HashItem*> prev;
 	for (size_t i = 0; i < table_.size(); i++) {
-		if (table_[i] != nullptr && table_[i]->deleted == false) {
+		if (table_[i] == nullptr) {
+			continue;
+		} if (table_[i]->deleted == true) {
+			delete table_[i];
+		} else {
 			prev.push_back(table_[i]);
 		}
 	}
